@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Attendance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --background: #f4f7fc; --surface: #ffffff; --primary: #4a7dff;
+            --primary-light: #6a9eff; --secondary: #2c3e50; --text-primary: #1e293b;
+            --text-secondary: #64748b; --border: #e2e8f0; --success: #10b981; --error: #ef4444;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--background); color: var(--text-primary); margin: 20px 0; }
+        .container { background: var(--surface); padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); width: 90%; max-width: 500px; border: 1px solid var(--border); }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { margin: 0; font-size: 1.8em; font-weight: 700; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-secondary); }
+        input[type="text"] { width: 100%; padding: 12px; font-size: 1em; background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; box-sizing: border-box; color: var(--text-primary); transition: all 0.2s ease; }
+        input[type="text"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(74, 125, 255, 0.1); }
+        input:disabled { background-color: #e9ecef; color: #6c757d; }
+        #qr-code { padding: 10px; border-radius: 12px; margin: 20px auto; width: fit-content; height: fit-content; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease; background: #fff; }
+        #qr-code.placeholder { width: 200px; height: 200px; background: var(--background); color: var(--text-secondary); font-size: 1em; border: 2px dashed var(--border); }
+        .otp-container { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+        #otp-display { flex-grow: 1; font-size: 2.2em; font-weight: 700; letter-spacing: 8px; padding: 15px 10px; background-color: var(--background); border-radius: 12px; color: var(--primary); text-align: center; }
+        #copy-otp-btn { padding: 16px; font-size: 1.2em; border: none; border-radius: 12px; background: var(--background); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; }
+        #copy-otp-btn:hover { background: var(--border); color: var(--primary); }
+        .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        button { padding: 15px; font-size: 1em; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 7px 20px rgba(0, 0, 0, 0.1); }
+        #startButton { background: linear-gradient(45deg, var(--primary), var(--primary-light)); }
+        #stopButton { background: linear-gradient(45deg, #ff5b5b, #ff8c8c); }
+        button:disabled { background: var(--border); color: var(--text-secondary); cursor: not-allowed; transform: none; box-shadow: none; }
+        .attendance-section h2 { font-size: 1.2em; text-align: left; margin-bottom: 15px; }
+        #attendance-list { list-style: none; padding: 8px; margin: 0; max-height: 200px; overflow-y: auto; background: var(--background); border-radius: 12px; }
+        #attendance-list li { background: var(--surface); border-radius: 8px; padding: 12px 18px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.5s ease-out; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #attendance-list li:last-child { margin-bottom: 0; }
+        #attendance-list .remove-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1em; opacity: 0.5; transition: all 0.2s ease; }
+        #attendance-list li:hover .remove-btn { opacity: 1; color: var(--error); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Professional Dashboard</h1>
+        </div>
+        
+        <div class="form-group">
+            <label for="sessionName">Session Name</label>
+            <input type="text" id="sessionName" placeholder="e.g., Calculus II - Midterm Review">
+        </div>
+        
+        <div id="qr-code" class="placeholder">QR Code will appear here</div>
+        
+        <div class="otp-container">
+            <div id="otp-display">000000</div>
+            <button id="copy-otp-btn" title="Copy OTP"><i class="fas fa-copy"></i></button>
+        </div>
+        
+        <div class="buttons">
+            <button id="startButton"><i class="fas fa-play"></i> Start</button>
+            <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop</button>
+        </div>
+        
+        <div class="attendance-section">
+            <h2>Live Attendance (<span id="student-count">0</span>)</h2>
+            <ul id="attendance-list"></ul>
+        </div>
+    </div>
+
+<script>
+    // DOM Elements
+    const sessionNameInput = document.getElementById('sessionName');
+    const startBtn = document.getElementById('startButton');
+    const stopBtn = document.getElementById('stopButton');
+    const qrCodeContainer = document.getElementById('qr-code');
+    const otpDisplay = document.getElementById('otp-display');
+    const copyOtpBtn = document.getElementById('copy-otp-btn');
+    const studentCountEl = document.getElementById('student-count');
+    const attendanceListEl = document.getElementById('attendance-list');
+    let liveUpdateInterval = null;
+
+    // --- Core Functions ---
+    function updateAttendanceList() {
+        const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+        studentCountEl.textContent = attendanceData.length;
+        attendanceListEl.innerHTML = "";
+        [...attendanceData].reverse().forEach(student => {
+            const listItem = document.createElement("li");
+            const time = new Date(student.timestamp).toLocaleTimeString('en-IN', { timeZone: "Asia/Kolkata" });
+            listItem.innerHTML = `
+                <div>
+                    <strong>${student.studentId}</strong>
+                    <div style="font-size: 0.8em; color: var(--text-secondary);">${time}</div>
+                </div>
+                <button class="remove-btn" data-id="${student.studentId}" title="Remove Student"><i class="fas fa-trash-alt"></i></button>
+            `;
+            attendanceListEl.appendChild(listItem);
+        });
+    }
+    
+    function removeStudent(studentIdToRemove) {
+        let attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+        attendanceData = attendanceData.filter(student => student.studentId !== studentIdToRemove);
+        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+        updateAttendanceList();
+    }
+
+    function startSession() {
+        const sessionName = sessionNameInput.value.trim() || `Attendance Session`;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        sessionNameInput.disabled = true;
+        
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        localStorage.setItem('attendanceSession', JSON.stringify({ otp, name: sessionName }));
+        localStorage.setItem('attendanceData', JSON.stringify([])); 
+        otpDisplay.textContent = otp;
+        qrCodeContainer.innerHTML = "";
+        qrCodeContainer.classList.remove('placeholder');
+        
+        new QRCode(qrCodeContainer, { text: window.location.href.replace('teacher.html', 'student.html'), width: 200, height: 200 });
+        liveUpdateInterval = setInterval(updateAttendanceList, 2000);
+        updateAttendanceList();
+    }
+
+    function stopSession() {
+        if (!confirm('Are you sure you want to stop the session? All attendance data will be downloaded.')) {
+            return;
+        }
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        sessionNameInput.disabled = false;
+        clearInterval(liveUpdateInterval);
+        downloadAttendanceCSV();
+        localStorage.removeItem('attendanceSession');
+        localStorage.removeItem('attendanceData');
+        otpDisplay.textContent = "000000";
+        qrCodeContainer.innerHTML = "Session Ended";
+        qrCodeContainer.classList.add('placeholder');
+        updateAttendanceList(); 
+    }
+
+    function downloadAttendanceCSV() {
+        const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+        if (attendanceData.length === 0) return;
+        
+        const session = JSON.parse(localStorage.getItem('attendanceSession'));
+        const sessionName = (session.name || 'Attendance').replace(/[^a-z0-9]/gi, '-');
+        
+        const header = ["StudentID", "Timestamp"];
+        const rows = attendanceData.map(record => {
+            const formattedTimestamp = new Date(record.timestamp).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+            return [`"${record.studentId}"`, `"${formattedTimestamp}"`];
+        });
+        
+        let csvContent = `data:text/csv;charset=utf-8,Session: ${session.name}\n`
+            + header.join(",") + "\n" 
+            + rows.map(e => e.join(",")).join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        const date = new Date();
+        const filename = `${sessionName}_attendance_${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}.csv`;
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function copyOTP() {
+        navigator.clipboard.writeText(otpDisplay.textContent).then(() => {
+            const originalIcon = copyOtpBtn.innerHTML;
+            copyOtpBtn.innerHTML = '<i class="fas fa-check"></i>';
+            copyOtpBtn.style.color = 'var(--success)';
+            setTimeout(() => {
+                copyOtpBtn.innerHTML = originalIcon;
+                copyOtpBtn.style.color = 'var(--text-secondary)';
+            }, 2000);
+        });
+    }
+
+    // --- Event Listeners ---
+    startBtn.addEventListener('click', startSession);
+    stopBtn.addEventListener('click', stopSession);
+    copyOtpBtn.addEventListener('click', copyOTP);
+    attendanceListEl.addEventListener('click', function(event) {
+        const removeButton = event.target.closest('.remove-btn');
+        if (removeButton) {
+            const studentId = removeButton.dataset.id;
+            if (confirm(`Are you sure you want to remove student "${studentId}"?`)) {
+                removeStudent(studentId);
+            }
+        }
+    });
+    
+    // Initial page state
+    localStorage.removeItem('attendanceSession');
+    localStorage.removeItem('attendanceData');
+</script>
+</body>
+</html>
